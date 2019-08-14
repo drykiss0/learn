@@ -372,3 +372,60 @@ Advices:
 
 ### 14. Consider implementing `Comparable`
 
+**The `compareTo(.)` method should:**
+
+* Throw `ClassCastException` if can't compare input object type
+* `sgn(x.compareTo(y)) == -sgn(y.compareTo(x))` for all x and y
+  * Implies that `x.compareTo(y)` must throw an exception if and only if `y.compareTo(x)` throws an
+    exception
+* be transitive - `x. compareTo(y) > 0 && y.compareTo(z) > 0` implies `x.compareTo(z) > 0`
+* `x.compareTo(y) == 0` imply that `sgn(x.compareTo(z)) == sgn(y.compareTo(z))`, for all z
+* Recommended consistency with `equals(.)`: `(x.compareTo(y) == 0) == (x.equals(y))`
+  * If not - put a note: "*Note: This class has a natural ordering that is inconsistent with equals.*"
+
+**Same problem as with `equals(.)`:** 
+
+* There is no way to extend an instantiable class with a new value component while preserving the `compareTo(.)` contract
+
+**Solution:** 
+
+* Use composition!
+
+**Warning:** sorted collections use the equality test imposed by `compareTo(.)` in place of `equals(.)`
+
+`BigDecimal` has `compareTo(.)` inconsistent with `equals(.)`
+
+```java
+        // HashSet contains 2 elements        
+        new HashSet<>(Arrays.asList(
+                new BigDecimal("1.0"),
+                new BigDecimal("1.00")));
+        
+        // TreeSet contains 1 element
+        new TreeSet<>(Arrays.asList(
+                new BigDecimal("1.0"), 
+                new BigDecimal("1.00")));
+```
+
+**Recipe:**
+
+* For primitives - use e.g. `Double.compare(x, y)` and similar
+* Start with the most significant field and work your way down until non-zero result is found
+
+**Prefer using new methods[8] from `Comparator` interface** and define your comparator as a constant:
+
+```java
+    // Comparable with comparator construction methods
+    private static final Comparator<PhoneNumber> COMPARATOR =
+            comparingInt((PhoneNumber pn) -> pn.areaCode)
+                    .thenComparingInt(pn -> pn.prefix)
+                    .thenComparingInt(pn -> pn.lineNum);
+    ...
+    public int compareTo(PhoneNumber pn) {
+        return COMPARATOR.compare(this, pn);
+    }    
+```
+
+
+
+## Classes and Interfaces
